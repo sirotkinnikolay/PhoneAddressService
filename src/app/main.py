@@ -1,6 +1,6 @@
 import os
 import logging
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Path
 from fastapi.responses import JSONResponse
 from . import schemas
 from .redis_client import init_redis_pool, close_redis_pool, get_redis
@@ -8,6 +8,8 @@ from .utils import normalize_phone
 
 logger = logging.getLogger("phone-address-api")
 logging.basicConfig(level=logging.INFO)
+
+PHONE_REGEX = r"^\+7[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}$"
 
 app = FastAPI(title="Phone-Address service", version="1.0")
 
@@ -23,7 +25,13 @@ async def shutdown():
 
 
 @app.get("/phones/{phone}", response_model=schemas.PhoneOut)
-async def get_address(phone: str) -> dict[str, str]:
+async def get_address(
+    phone: str = Path(
+        ...,
+        pattern=PHONE_REGEX,
+        description="Номер телефона в формате +7XXXXXXXXXX или +7(XXX)XXXXXXX"
+    )
+) -> dict[str, str]:
     """
     Получение адреса по номеру телефона.
     """
@@ -52,7 +60,14 @@ async def create_mapping(item: schemas.PhoneCreate) -> JSONResponse:
     return JSONResponse(status_code=status.HTTP_201_CREATED, content={"phone": key, "address": item.address})
 
 @app.put("/phones/{phone}", response_model=schemas.PhoneOut)
-async def update_mapping(phone: str, payload: schemas.AddressUpdate) -> dict[str, str]:
+async def update_mapping(
+    phone: str = Path(
+        ...,
+        pattern=PHONE_REGEX,
+        description="Номер телефона в формате +7XXXXXXXXXX или +7(XXX)XXXXXXX"
+    ),
+    payload: schemas.AddressUpdate = ...
+) -> dict[str, str]:
     """
     Обновление адреса.
     """
@@ -67,7 +82,13 @@ async def update_mapping(phone: str, payload: schemas.AddressUpdate) -> dict[str
     return {"phone": key, "address": payload.address}
 
 @app.delete("/phones/{phone}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_mapping(phone: str) -> JSONResponse:
+async def delete_mapping(
+    phone: str = Path(
+        ...,
+        pattern=PHONE_REGEX,
+        description="Номер телефона в формате +7XXXXXXXXXX или +7(XXX)XXXXXXX"
+    )
+) -> JSONResponse:
     """
     Удаление записи.
     """

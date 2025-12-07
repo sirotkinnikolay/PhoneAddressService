@@ -1,10 +1,12 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
+
+PHONE_PATTERN = r"^\+7[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}$"
 
 class PhoneCreate(BaseModel):
-    phone: str = Field(
+    phone: constr(pattern=PHONE_PATTERN) = Field(
         ...,
         example="+79991234567",
-        description="Номер телефона в международном формате"
+        description="Номер телефона в формате +7XXXXXXXXXX или +7(XXX)XXXXXXX"
     )
     address: str = Field(
         ...,
